@@ -2,6 +2,12 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const url = require('url');
 let mainWindow;
+
+console.log({
+  ELECTRON_START_URL: process.env.ELECTRON_START_URL,
+  REACT_APP_TEST_DRIVER: process.env.REACT_APP_TEST_DRIVER,
+})
+
 function createWindow () {
   const startUrl = process.env.ELECTRON_START_URL || url.format({
     pathname: path.join(__dirname, '../index.html'),
