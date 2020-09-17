@@ -3,13 +3,11 @@ const path = require('path');
 const url = require('url');
 let mainWindow;
 function createWindow () {
-  // const startUrl = 'process.env.ELECTRON_START_URL' || url.format({
-  const startUrl = 'http://localhost:3000' 
-  // || url.format({
-  //   pathname: path.join(__dirname, '../index.html'),
-  //   protocol: 'file:',
-  //   slashes: true,
-  // });
+  const startUrl = process.env.ELECTRON_START_URL || url.format({
+    pathname: path.join(__dirname, '../index.html'),
+    protocol: 'file:',
+    slashes: true,
+  });
   mainWindow = new BrowserWindow({ width: 800, height: 600 });
   mainWindow.loadURL(startUrl);
   mainWindow.on('closed', function () {
@@ -28,8 +26,6 @@ app.on('activate', function () {
   }
 });
 
-console.log('test driver?', process.env.REACT_APP_TEST_DRIVER)
-console.log(process.env)
 if (process.env.REACT_APP_TEST_DRIVER) {
   process.on('message', onMessage)
 }
@@ -46,7 +42,7 @@ async function onMessage ({ msgId, cmd, args }) {
       stack: err.stack,
       name: err.name
     }
-    process.send({ msgId, reject })
+    process.send({ msgIgd, reject })
   }
 }
 

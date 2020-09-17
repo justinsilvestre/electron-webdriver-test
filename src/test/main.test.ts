@@ -25,8 +25,6 @@ describe('test', () => {
       app.rpc('sayHi')
 
       app.process.on('message', (msg) => {
-        console.log('message received in test!!')
-        console.log({ msg })
         res(msg.resolve)
       })
     })
@@ -38,8 +36,6 @@ describe('test', () => {
       app.rpc('double', 2)
 
       app.process.on('message', (msg) => {
-        console.log('message received in test!!')
-        console.log({ msg })
         res(msg.resolve)
       })
     })

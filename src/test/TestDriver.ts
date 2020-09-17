@@ -15,10 +15,10 @@ export default class TestDriver {
     const env = {
       NODE_ENV: 'test',
       REACT_APP_TEST_DRIVER: 'true',
+      ELECTRON_START_URL: 'http://localhost:3000',
       PATH: process.env.PATH,
       ...givenEnv,
     } as NodeJS.ProcessEnv
-    console.log('trying to start app with env:', { path, args, env})
 
     this.rpcCalls = []
 
