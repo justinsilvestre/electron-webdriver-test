@@ -11,9 +11,8 @@ describe("test", () => {
 
   beforeAll(async () => {
     app = await createTestDriver({
-      path: electronPath,
+      path: electronPath as any,
       args: [process.cwd()],
-
     })
     const ready = await app.isReady;
     expect(ready).toBe(true)
@@ -23,14 +22,16 @@ describe("test", () => {
   });
 
   afterAll(async () => {
+    console.log('stopping app')
     await app.stop();
+    console.log('done with test cleanup')
   });
 
   // test("sends command", async () => {
   //   const result = await new Promise((res: any, rej: any) => {
   //     app.rpc("sayHi");
 
-  //     app.process.on("message", (msg) => {
+  //     app.chromedriverProcess.on("message", (msg) => {
   //       res(msg.resolve);
   //     });
   //   });
@@ -41,7 +42,7 @@ describe("test", () => {
   //   const result = await new Promise((res: any, rej: any) => {
   //     app.rpc("double", 2);
 
-  //     app.process.on("message", (msg) => {
+  //     app.chromedriverProcess.on("message", (msg) => {
   //       res(msg.resolve);
   //     });
   //   });
@@ -51,6 +52,17 @@ describe("test", () => {
   test('chromedriver start', async () => {
     expect(await app.isReady).toBe(true)
     expect(await app.browser).toBeTruthy()
+
+    await app.browser.execute(() => {
+      console.log('logging works')
+      // return require('electron').ipcRenderer.invoke('close')
+    }, [])
+
+    const button = await app.browser.waitUntil(async () => {
+      return (await app.browser.$$('button')).length == 1
+    })
+    expect(await (await app.browser.$('button')).getText()).toBe('Click me!')
+
     expect(1 + 1).toEqual(2)
   })
 });

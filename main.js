@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
 let mainWindow;
@@ -14,7 +14,13 @@ function createWindow () {
     protocol: 'file:',
     slashes: true,
   });
-  mainWindow = new BrowserWindow({ width: 800, height: 600 });
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true,
+    }
+  });
   mainWindow.loadURL(startUrl);
   mainWindow.on('closed', function () {
     mainWindow = null;
@@ -36,6 +42,11 @@ if (process.env.REACT_APP_TEST_DRIVER) {
   process.on('message', onMessage)
 }
 
+ipcMain.handle('close', () => {
+  mainWindow.close()
+  return true
+})
+
 async function onMessage ({ msgId, cmd, args }) {
   let method = METHODS[cmd]
   if (!method) method = () => new Error('Invalid method: ' + cmd)
@@ -48,7 +59,7 @@ async function onMessage ({ msgId, cmd, args }) {
       stack: err.stack,
       name: err.name
     }
-    process.send({ msgIgd, reject })
+    process.send({ msgId, reject })
   }
 }
 

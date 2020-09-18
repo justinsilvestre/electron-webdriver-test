@@ -17,7 +17,7 @@
     "electron-chromedriver": "^10.0.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-scripts": "3.4.3",
+    "silvestre-afa-react-scripts": "3.4.1",
     "request": "^2.88.2",
     "typescript": "~3.7.2",
     "wdio-chromedriver-service": "^6.0.4",
@@ -27,7 +27,7 @@
   "homepage": ".",
   "scripts": {
     "start": "export BROWSER=none && react-scripts start",
-    "electron": "electron .",
+    "electron": "NODE_ENV=development ELECTRON_START_URL=http://localhost:3000 electron .",
     "electron:test": "electron",
     "build": "react-scripts build",
     "test": "react-scripts test --testPathIgnorePatterns=./src/test",
@@ -37,16 +37,7 @@
   "eslintConfig": {
     "extends": "react-app"
   },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  }
+  "browserslist": [
+    "electron >= 9.0.0"
+  ]
 }

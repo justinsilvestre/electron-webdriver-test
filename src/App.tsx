@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
-import logo from './logo.svg';
 import './App.css';
+import { ipcRenderer } from 'electron'
+
+function closeWindow() {
+  ipcRenderer.invoke('close')
+}
 
 function App() {
   const [clicked, setClicked] = useState(false)
@@ -8,13 +12,18 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
         <button onClick={() => setClicked(clicked => !clicked)}>
           Click me!
         </button>
         {clicked && <span id="hello">Hello!</span>}
         <p>
           Edit <code>src/App.tsx</code> and save to reload.
+        </p>
+
+        <p>
+          <a href="#" onClick={e => { e.preventDefault(); closeWindow() }}>
+            close window
+          </a>
         </p>
         <a
           className="App-link"
