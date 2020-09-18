@@ -5,6 +5,7 @@ export type MessageToMain =
   | { type: 'isReady' }
   | { type: 'sayHi' }
   | { type: 'double', args: [number] }
+  | { type: 'asyncTriple', args: [number] }
 
 export type MessageResponse<R> =
   | { result: R, error?: undefined }
@@ -17,7 +18,7 @@ export async function onMessage(message: MessageToMain): Promise<MessageResponse
     const result = 'args' in message
       ? MESSAGE_RESPONSES[message.type](...message.args)
       : MESSAGE_RESPONSES[message.type]()
-    return { result }
+    return { result: await result }
   } catch (rawError) {
     const error = {
       message: rawError.message,
@@ -28,23 +29,9 @@ export async function onMessage(message: MessageToMain): Promise<MessageResponse
   }
 }
 
-
-function respondToMessage(message: MessageToMain) {
-  switch (message.type) {
-    case 'isReady':
-      return true
-    case 'sayHi':
-      console.log('hi there!!')
-      return 'hi there'
-    case 'double':
-      return message.args[0] * 2
-    default:
-      throw new Error(`Unknown message type: ${JSON.stringify(message)}`)
-  }
-}
-
 export const MESSAGE_RESPONSES  = {
   isReady: () => true,
   sayHi: () => 'hi there',
   double: (num: number) => num * 2,
+  asyncTriple: async (num: number) => num * 3,
 }

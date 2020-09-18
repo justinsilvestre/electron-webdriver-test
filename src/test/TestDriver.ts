@@ -150,16 +150,21 @@ export default class TestDriver {
     });
   }
 
-  async sendToMainProcess<M extends MessageToMain>(message: M): Promise<
-    MessageResponse<
-      ReturnType<(typeof MESSAGE_RESPONSES)[M["type"]]>
-    >
+  async sendToMainProcess<
+    M extends MessageToMain,
+    R extends ReturnType<(typeof MESSAGE_RESPONSES)[M["type"]]>,
+  >(message: M): Promise<
+    // so we don't end up with a promise of a promise
+    // https://stackoverflow.com/a/49889856/4495411
+    MessageResponse<R extends PromiseLike<infer U> ? U : R>
   > {
-    return this.client.executeAsync((message: MessageToMain, done) => {
+    return this.client.executeAsync(async (message: MessageToMain, done) => {
       const { ipcRenderer } = require("electron");
       ipcRenderer
         .invoke("message", message)
-        .then(done)
+        .then(async (result) => {
+          done(await result);
+        });
     }, message);
   }
 

@@ -35,6 +35,13 @@ describe("test", () => {
     expect(doubledNumber.result).toEqual(4);
   });
 
+  test("sends async command with arguments", async () => {
+    const tripledNumber = await app.sendToMainProcess(
+      { type: "asyncTriple", args: [2] },
+    );
+    expect(tripledNumber.result).toEqual(6);
+  });
+
   test("chromedriver start", async () => {
     expect(await (await app.isReady).result).toBe(true);
     expect(await app.client).toBeTruthy();
