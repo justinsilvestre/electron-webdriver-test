@@ -23,16 +23,18 @@
     "wdio-chromedriver-service": "^6.0.4",
     "webdriverio": "^6.5.0"
   },
-  "main": "./main.js",
+  "main": "./main-build/main.js",
   "homepage": ".",
   "scripts": {
     "start": "export BROWSER=none && react-scripts start",
-    "electron": "NODE_ENV=development ELECTRON_START_URL=http://localhost:3000 electron .",
-    "electron:test": "electron",
+    "electron": "export NODE_ENV=development && export ELECTRON_START_URL=http://localhost:3000 && build:main && electron .",
+    "electrontmp": "export NODE_ENV=development && export ELECTRON_START_URL=http://localhost:3000 && electron .",
     "build": "react-scripts build",
+    "build:main": "yarn tsc ./electron/main.ts --outDir ./main-build",
     "test": "react-scripts test --testPathIgnorePatterns=./src/test",
     "eject": "react-scripts eject",
-    "integration": "react-scripts test ./src/test --watchAll=false  --runInBand"
+    "tsc": "tsc",
+    "integration": "export NODE_ENV=development && export ELECTRON_START_URL=http://localhost:3000 && yarn build:main && react-scripts test ./src/test --watchAll=false  --runInBand"
   },
   "eslintConfig": {
     "extends": "react-app"

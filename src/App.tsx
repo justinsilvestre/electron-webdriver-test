@@ -22,7 +22,7 @@ function App() {
 
         <p>
           <a href="#" onClick={e => { e.preventDefault(); closeWindow() }}>
-            close window
+            close window!
           </a>
         </p>
         <a

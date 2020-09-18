@@ -1,6 +1,6 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
-const path = require('path');
-const url = require('url');
+import { app, BrowserWindow, ipcMain } from 'electron'
+import * as path from 'path'
+import * as url from 'url'
 let mainWindow;
 
 console.log({
