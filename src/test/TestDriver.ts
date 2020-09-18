@@ -1,15 +1,11 @@
-import { ChildProcess, spawn } from "child_process";
-import { BrowserObject, Options, remote } from "webdriverio";
+import { BrowserObject, remote } from "webdriverio";
 import Chromedriver from "./Chromedriver";
-// @ts-ignore
-import { launcher as ChromedriveLauncher } from "wdio-chromedriver-service";
 import request from "request";
-
-type Message = {
-  msgId: number;
-  resolve?: any;
-  reject?: any;
-};
+import {
+  MessageResponse,
+  MessageToMain,
+  MESSAGE_RESPONSES,
+} from "../../electron/messages";
 
 function isRunning(statusUrl: string, callback: Function) {
   const cb = false;
@@ -95,7 +91,7 @@ export async function createTestDriver(
   } as NodeJS.ProcessEnv;
 
   // const {chromeDriverProcess: driverProcess, stop: stopChromeDriver }  = runChromeDriver([], env);
-  const driver = new Chromedriver([], env)
+  const driver = new Chromedriver([], env);
   await waitForChromeDriver("http://localhost:9515/status", 7000);
 
   // await chromedriverLauncher
@@ -125,15 +121,14 @@ export async function createTestDriver(
     args,
     env,
     browser,
-    driver
+    driver,
   });
 }
 
 export default class TestDriver {
-  rpcCalls: ({ resolve: Function; reject: Function } | null)[];
-  isReady: Promise<boolean>;
-  browser: BrowserObject;
-  _driver: Chromedriver
+  isReady: Promise<MessageResponse<boolean>>;
+  client: BrowserObject;
+  _driver: Chromedriver;
 
   constructor(
     { path, args, driver, browser, env: givenEnv }: {
@@ -144,104 +139,63 @@ export default class TestDriver {
       env?: NodeJS.ProcessEnv;
     },
   ) {
-    this.browser = browser;
-    this._driver = driver
-
-    this.rpcCalls = [];
-
-    // // handle rpc responses
-    // this.chromedriverProcess.on('message', (message: Message) => {
-    //   console.log('Received message!', message)
-    //   // pop the handler
-    //   const rpcCall = this.rpcCalls[message.msgId]
-    //   if (!rpcCall) return
-    //   this.rpcCalls[message.msgId] = null
-    //   // reject/resolve
-    //   if (message.reject) rpcCall.reject(message.reject)
-    //   else rpcCall.resolve(message.resolve)
-    // })
+    this.client = browser;
+    this._driver = driver;
 
     // wait for ready
-    // this.isReady = this.rpc('isReady').catch((err) => {
-    //   console.error('Application failed to start', err)
-    //   this.stop()
-    //   process.exit(1)
-    // })
-    this.isReady = Promise.resolve(true);
+    this.isReady = this.sendToMainProcess({ type: "isReady" }).catch((err) => {
+      console.error("Application failed to start", err);
+      this.stop();
+      process.exit(1);
+    });
   }
 
-  // simple RPC call
-  // to use: driver.rpc('method', 1, 2, 3).then(...)
-  async rpc(cmd: string, ...args: any[]): Promise<any> {
-    // // send rpc request
-    // const msgId = this.rpcCalls.length
-    // console.log('Sending message!', { cmd, args, msgId })
-    // this.browser.execute(() => {
-    //   console.log('boop!')
-    //   require('electron').ipcRenderer.send('message', )
-    // }, [cmd, args, msgId])
-    // this.chromedriverProcess.send({ msgId, cmd, args })
-    // return new Promise((resolve, reject) => this.rpcCalls.push({ resolve, reject }))
+  async sendToMainProcess<M extends MessageToMain>(message: M): Promise<
+    MessageResponse<
+      ReturnType<(typeof MESSAGE_RESPONSES)[M["type"]]>
+    >
+  > {
+    return this.client.executeAsync((message: MessageToMain, done) => {
+      const { ipcRenderer } = require("electron");
+      ipcRenderer
+        .invoke("message", message)
+        .then(done)
+    }, message);
   }
 
   async stop() {
     console.log("closing window");
-    // await this.closeWindow()
-    await this.browser.closeWindow()
+    await this.client.closeWindow();
+    // await browser.deleteSession();
     console.log("running?");
-    const isRunningNow = () => new Promise((res, rej) => {
-      try {
-        isRunning("http://localhost:9515/status", (running: any) => {
-          if (running) res(true);
-          else res(false);
-        });
-      } catch (err) {
-        return res(false);
-      }
-    });
+    const isRunningNow = () =>
+      new Promise((res, rej) => {
+        try {
+          isRunning("http://localhost:9515/status", (running: any) => {
+            if (running) res(true);
+            else res(false);
+          });
+        } catch (err) {
+          return res(false);
+        }
+      });
     console.log("running?", { isRunningNow: await isRunningNow() });
     if (await isRunningNow()) {
-      // this.chromedriverProcess.send('complete')
-      console.log('trying to stop chromedriver process')
-    // const killed = this.chromedriverProcess.kill(
-    //   'SIGTERM'
-    //   );
-    const killed = this.stopChromeDriver()
-    if (!killed) throw new Error('Could not kill chromedriver process')  
-    // this.chromedriverProcess.send('exit')
-      // await waitForChromeDriverToStop("http://localhost:9515/status", 7000)
-
+      console.log("trying to stop chromedriver process");
+      const killed = this.stopChromeDriver();
+      if (!killed) throw new Error("Could not kill chromedriver process");
     }
-    console.log('done stopping app')
-    console.log("running still?", { isRunningNow: await isRunningNow() });
-    // await (this.chromedriverProcess as any).close()
-    // await this.browser.closeWindow()
-    // this.chromedriverProcess.kill(0)
-
-    // const done = new Promise((res, rej) => {
-    //   this.chromedriverProcess.on('exit', () => {
-    //     res()
-    //   })
-    // })
-    // await done
-
-    //     // await this.browser.closeApp()
-    // console.log("closing window");
-    // await this.closeWindow()
-    // // await browser.closeWindow();
-    // // console.log("deleting session");
-    // // await browser.deleteSession();
-
+    console.log("done stopping app");
   }
 
   stopChromeDriver() {
-    return this._driver.stop()
+    return this._driver.stop();
   }
 
   async closeWindow() {
-    await this.browser.execute(() => {
-      console.log('trying to close')
-      return require('electron').ipcRenderer.invoke('close')
-    }, [])
+    await this.client.execute(() => {
+      console.log("trying to close");
+      return require("electron").ipcRenderer.invoke("close");
+    }, []);
   }
 }

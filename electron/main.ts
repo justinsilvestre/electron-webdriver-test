@@ -1,11 +1,13 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import * as path from 'path'
 import * as url from 'url'
+import { onMessage } from './messages'
+
 let mainWindow;
 
 console.log({
-  ELECTRON_START_URL: process.env.ELECTRON_START_URL,
   REACT_APP_TEST_DRIVER: process.env.REACT_APP_TEST_DRIVER,
+  ELECTRON_START_URL: process.env.ELECTRON_START_URL,
 })
 
 function createWindow () {
@@ -38,42 +40,13 @@ app.on('activate', function () {
   }
 });
 
-if (process.env.REACT_APP_TEST_DRIVER) {
-  process.on('message', onMessage)
-}
+ipcMain.handle('message', (event, ...args) => {
+  console.log({ event, args })
+  return onMessage(args[0])
+})
 
 ipcMain.handle('close', () => {
   mainWindow.close()
   return true
 })
 
-async function onMessage ({ msgId, cmd, args }) {
-  let method = METHODS[cmd]
-  if (!method) method = () => new Error('Invalid method: ' + cmd)
-  try {
-    const resolve = await method(...args)
-    process.send({ msgId, resolve })
-  } catch (err) {
-    const reject = {
-      message: err.message,
-      stack: err.stack,
-      name: err.name
-    }
-    process.send({ msgId, reject })
-  }
-}
-
-const METHODS = {
-  isReady () {
-    // do any setup needed
-    return true
-  },
-  // define your RPC-able methods here
-  sayHi() {
-    console.log('hi')
-    return 'hi there'
-  },
-  double(number) {
-    return number * 2
-  }
-}

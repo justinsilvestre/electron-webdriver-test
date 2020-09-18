@@ -4,65 +4,46 @@ const electronPath = require("electron");
 
 // https://github.com/erwinheitzman/jest-webdriverio-standalone-boilerplate
 
-
 // send an IPC message to the app
 describe("test", () => {
-  let app: TestDriver
+  let app: TestDriver;
 
   beforeAll(async () => {
     app = await createTestDriver({
       path: electronPath as any,
       args: [process.cwd()],
-    })
-    const ready = await app.isReady;
-    expect(ready).toBe(true)
-    // browser = await remote(config);
-    await app.browser
-    // console.log({ browser: app.browser })
+    });
+    const { result: ready } = await app.isReady;
+    expect(ready).toBe(true);
   });
 
   afterAll(async () => {
-    console.log('stopping app')
+    console.log("stopping app");
     await app.stop();
-    console.log('done with test cleanup')
+    console.log("done with test cleanup");
   });
 
-  // test("sends command", async () => {
-  //   const result = await new Promise((res: any, rej: any) => {
-  //     app.rpc("sayHi");
+  test("sends command", async () => {
+    const { result } = await app.sendToMainProcess({ type: "sayHi" });
+    expect(result).toEqual("hi there");
+  });
 
-  //     app.chromedriverProcess.on("message", (msg) => {
-  //       res(msg.resolve);
-  //     });
-  //   });
-  //   expect(result).toEqual("hi there");
-  // });
+  test("sends command with arguments", async () => {
+    const doubledNumber = await app.sendToMainProcess(
+      { type: "double", args: [2] },
+    );
+    expect(doubledNumber.result).toEqual(4);
+  });
 
-  // test("sends command with arguments", async () => {
-  //   const result = await new Promise((res: any, rej: any) => {
-  //     app.rpc("double", 2);
+  test("chromedriver start", async () => {
+    expect(await (await app.isReady).result).toBe(true);
+    expect(await app.client).toBeTruthy();
 
-  //     app.chromedriverProcess.on("message", (msg) => {
-  //       res(msg.resolve);
-  //     });
-  //   });
-  //   expect(result).toEqual(4);
-  // });
+    const button = await app.client.waitUntil(async () => {
+      return (await app.client.$$("button")).length == 1;
+    });
+    expect(await (await app.client.$("button")).getText()).toBe("Click me!");
 
-  test('chromedriver start', async () => {
-    expect(await app.isReady).toBe(true)
-    expect(await app.browser).toBeTruthy()
-
-    await app.browser.execute(() => {
-      console.log('logging works')
-      // return require('electron').ipcRenderer.invoke('close')
-    }, [])
-
-    const button = await app.browser.waitUntil(async () => {
-      return (await app.browser.$$('button')).length == 1
-    })
-    expect(await (await app.browser.$('button')).getText()).toBe('Click me!')
-
-    expect(1 + 1).toEqual(2)
-  })
+    expect(1 + 1).toEqual(2);
+  });
 });
