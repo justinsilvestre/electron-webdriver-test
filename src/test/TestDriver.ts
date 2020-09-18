@@ -6,6 +6,7 @@ import {
   MessageToMain,
   MESSAGE_RESPONSES,
 } from "../../electron/messages";
+import { ChildProcess } from "child_process";
 
 function isRunning(statusUrl: string, callback: Function) {
   const cb = false;
@@ -21,12 +22,12 @@ function isRunning(statusUrl: string, callback: Function) {
   });
 }
 
-function waitForChromeDriver(statusUrl: string, startTimeout: number) {
+function waitForChromeDriver(driverProcess: ChildProcess, statusUrl: string, startTimeout: number) {
   return new Promise<boolean>(function (resolve, reject) {
     const startTime = Date.now();
     const checkIfRunning = function () {
       isRunning(statusUrl, (running: any) => {
-        if (!self.process) {
+        if (!driverProcess) {
           return reject(Error("ChromeDriver has been stopped"));
         }
 
@@ -49,12 +50,12 @@ function waitForChromeDriver(statusUrl: string, startTimeout: number) {
     checkIfRunning();
   });
 }
-function waitForChromeDriverToStop(statusUrl: string, stopTimeout: number) {
+function waitForChromeDriverToStop(driverProcess: ChildProcess, statusUrl: string, stopTimeout: number) {
   return new Promise<boolean>(function (resolve, reject) {
     const startTime = Date.now();
     const checkIfRunning = function () {
       isRunning(statusUrl, (running: any) => {
-        if (!self.process) {
+        if (!driverProcess) {
           return resolve(true);
         }
 
@@ -92,7 +93,7 @@ export async function createTestDriver(
 
   // const {chromeDriverProcess: driverProcess, stop: stopChromeDriver }  = runChromeDriver([], env);
   const driver = new Chromedriver([], env);
-  await waitForChromeDriver("http://localhost:9515/status", 7000);
+  await waitForChromeDriver(driver.process, "http://localhost:9515/status", 7000);
 
   // await chromedriverLauncher
 
